@@ -14,6 +14,7 @@ class TCP:
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc.bind((IP, PORT))
         self.soc.listen(5)
+
         print("Listening for connection")
         self.threat()
 
@@ -25,7 +26,6 @@ class TCP:
 
             thread = threading.Thread(target=self.receive, args=(so, ))
             thread.start()
-
 
     def receive(self, so):
 
