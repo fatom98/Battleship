@@ -1,5 +1,3 @@
-#To-do
-
 from tkinter import *
 from tkinter.messagebox import *
 import socket, threading
@@ -22,7 +20,7 @@ class GUI(Frame):
     def tcp(self):
 
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.soc.connect(("127.0.0.1" , 54321))
+        self.soc.connect(("192.168.1.46" , 54321))
         self.connection = "TCP"
 
         self.listen(self.soc)
@@ -106,7 +104,8 @@ class GUI(Frame):
         else:
             if (i,j) not in self.clicked:
                 self.send_msg(f"{self.state},,{i},{j}")
-                self.clicked.append((i,j))
+                if self.state == "enable":
+                    self.clicked.append((i,j))
 
     def listen(self, so):
         thread = threading.Thread(target=self.receive, args=(so,))
