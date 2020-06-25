@@ -31,9 +31,7 @@ class TCP:
 
         while True:
             self.message = so.recv(1024)
-            print(self.message)
             self.broadcast(so)
-
 
     def broadcast(self, so):
 

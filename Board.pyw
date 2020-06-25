@@ -11,6 +11,7 @@ class GUI(Frame):
         self.hit = 0
         self.clicked = list()
         self.grid = list()
+        self.turn = StringVar()
         self.tcp()
         self.board()
 
@@ -35,8 +36,8 @@ class GUI(Frame):
         frame2 = Frame(self)
         frame2.pack(fill = BOTH, expand = True, padx = 5, side = LEFT, pady = 5)
 
-        frame3 = Frame(self)
-        frame3.pack(side = LEFT, fill = BOTH, expand = True)
+        self.frame3 = Frame(self)
+        self.frame3.pack(side = LEFT, fill = BOTH, expand = True)
 
         Label(frame1, text = "Battle Ship", font = "ComicSans 16 bold", fg = "white", bg = "#4267B2").pack(fill = X)
 
@@ -51,10 +52,30 @@ class GUI(Frame):
 
             self.grid.append(inner)
 
-        self.ready = Button(frame3, text = "Ready", command = self.start)
+        self.ready = Button(self.frame3, text = "Ready", command = self.start)
         self.ready.grid(row = 0, column = 0)
 
-        Grid.rowconfigure(frame3, 0, weight = 1)
+        Grid.rowconfigure(self.frame3, 0, weight = 1)
+
+    def start(self):
+
+        if self.shipCount > 0:
+            showerror("Error", "You need to place all ships to start")
+
+        else:
+            self.started = 1
+            self.connected += 1
+
+            if self.connected == 2:
+                self.ready.destroy()
+                self.turn.set("Opponent")
+                self.turnLabel = Label(self.frame3, text = f"Turn: {self.turn.get()}", fg = "OrangeRed3")
+                self.turnLabel.pack(side = LEFT)
+
+            else:
+                self.turn.set("You")
+                showinfo("Info", "Waiting for the opponent")
+        self.send_msg("ready")
 
     def pressed(self, position):
         i, j = position[0], position[1]
@@ -77,24 +98,6 @@ class GUI(Frame):
             self.send_msg(f",{i},{j}")
 
 
-    def start(self):
-
-        if self.shipCount > 0:
-            showerror("Error", "You need to place all ships to start")
-        else:
-            self.started = 1
-            self.connected += 1
-
-            if self.connected == 2:
-                self.ready.destroy()
-                root.geometry("350x300+350+150")
-
-            else:
-                showinfo("Info", "Waiting for the opponent")
-
-            self.send_msg("ready")
-
-
     def listen(self, so):
         thread = threading.Thread(target=self.receive, args=(so,))
         thread.start()
@@ -103,14 +106,14 @@ class GUI(Frame):
 
         while True:
             buffer = so.recv(1024).decode("utf-8")
-            print(buffer)
 
             if buffer == "ready":
                 self.connected += 1
 
                 if self.connected == 2:
                     self.ready.destroy()
-                    root.geometry("320x300+350+150")
+                    self.turnLabel = Label(self.frame3, text = f"Turn: {self.turn.get()}", fg = "OrangeRed3")
+                    self.turnLabel.pack(side = LEFT)
 
             elif "," in buffer:
                 cond, i, j = buffer.split(",")
@@ -118,11 +121,12 @@ class GUI(Frame):
                     button = self.grid[int(i)][int(j)]
                 except ValueError:
                     button = i = j = 0
-
                 if cond == "":
                     if (int(i), int(j)) in self.clicked:
                         button["state"] = NORMAL
-                        button["bg"] = "yellow"
+                        button["bg"] = "red"
+                        button["font"] = "ComicSans 9 bold"
+                        button["text"] = "X"
                         button["state"] = DISABLED
                         self.hit += 1
 
@@ -131,19 +135,29 @@ class GUI(Frame):
                             self.send_msg(f"done,,")
                             root.destroy()
                         else:
+                            self.turn.set("Opponent")
+                            self.turnLabel["text"] = f"Turn: {self.turn.get()}"
                             self.send_msg(f"hit, {i}, {j}")
 
                     else:
+                        self.turn.set("You")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}"
                         self.send_msg(f"miss, {i}, {j}")
 
                 else:
                     if cond == "hit":
+                        self.turn.set("You")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}"
                         button["state"] = NORMAL
                         button["bg"] = "green"
                         button["state"] = DISABLED
+
                     elif cond == "miss":
+                        self.turn.set("Opponent")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}"
                         button["state"] = NORMAL
-                        button["bg"] = "red"
+                        button["text"] = "X"
+                        button["font"] = "ComicSans 9 bold"
                         button["state"] = DISABLED
 
                     else:
@@ -157,5 +171,5 @@ if __name__ == '__main__':
     root = Tk()
     app = GUI(root)
     root.title("Battle Ship")
-    root.geometry("400x300+350+150")
+    root.geometry("415x300+350+150")
     root.mainloop()
