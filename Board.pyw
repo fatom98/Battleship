@@ -14,7 +14,7 @@ class GUI(Frame):
         self.grid = list()
         self.clicked = list()
         self.turn = StringVar()
-        self.tcp()
+        # self.tcp()
         self.board()
 
     def tcp(self):
@@ -43,10 +43,10 @@ class GUI(Frame):
 
         Label(frame1, text = "Battleship", font = "ComicSans 16 bold", fg = "white", bg = "#4267B2").pack(fill = X)
 
-        for i in range(10):
+        for i in range(15):
 
             inner = list()
-            for j in range(10):
+            for j in range(15):
                 button = Button(frame2, height = 1, width = 3)
                 button.grid(row = i, column = j)
                 button.bind("<ButtonRelease-1>", lambda event, position = (i, j): self.pressed(position))
@@ -196,13 +196,13 @@ class GUI(Frame):
         self.soc.send(msg.encode("utf-8"))
 
     def disable(self):
-        for i in range(10):
-            for j in range(10):
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[0])):
                 self.grid[i][j]["state"] = DISABLED
 
     def enable(self):
-        for i in range(10):
-            for j in range(10):
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[0])):
                 if (i, j) not in self.ships:
                     self.grid[i][j]["state"] = NORMAL
 
@@ -210,5 +210,5 @@ if __name__ == '__main__':
     root = Tk()
     app = GUI(root)
     root.title("Battle Ship")
-    root.geometry("465x300+350+150")
+    root.geometry("620x435+350+120")
     root.mainloop()
