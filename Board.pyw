@@ -169,14 +169,9 @@ class GUI(Frame):
                         self.turn.set("Opponent")
                         self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
 
-                        if (i, j) not in self.ships:
-                            color = "black"
-                        else:
-                            color = "yellow"
-
                         button["state"] = NORMAL
                         button["text"] = "X"
-                        button["fg"] = color
+                        button["fg"] = "black"
                         button["font"] = "ComicSans 9 bold"
                         button["state"] = DISABLED
                         self.disable()
