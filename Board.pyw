@@ -1,3 +1,6 @@
+#TO-DO
+#TODO remove hit crosses
+
 from tkinter import *
 from tkinter.messagebox import *
 import socket, threading
@@ -14,11 +17,10 @@ class GUI(Frame):
         self.grid = list()
         self.clicked = list()
         self.turn = StringVar()
-        # self.tcp()
+        self.tcp()
         self.board()
 
     def tcp(self):
-
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc.connect(("192.168.1.46" , 54321))
         self.connection = "TCP"
@@ -60,13 +62,13 @@ class GUI(Frame):
         Grid.rowconfigure(self.frame3, 0, weight = 1)
 
     def start(self):
-
         if self.shipCount > 0:
             showerror("Error", "You need to place all ships to start")
 
         else:
             self.started = 1
             self.connected += 1
+            self.ready.destroy()
 
             if self.connected == 2:
                 self.ready.destroy()
@@ -74,37 +76,35 @@ class GUI(Frame):
                 self.state = "disable"
                 self.turnLabel = Label(self.frame3, text = f"Turn: {self.turn.get()}, Hit: {self.hit}", fg = "OrangeRed3")
                 self.turnLabel.pack(side = LEFT)
-
                 self.disable()
 
             else:
                 self.turn.set("You")
                 showinfo("Info", "Waiting for the opponent")
 
-        self.send_msg("ready")
+            self.send_msg("ready")
 
     def pressed(self, position):
+        if self.state == "enable":
+            i, j = position[0], position[1]
+            current = self.grid[i][j]
 
-        i, j = position[0], position[1]
-        current = self.grid[i][j]
+            if not self.started:
 
-        if not self.started:
+                if (i, j) not in self.ships:
+                    if self.shipCount > 0:
+                        self.ships.append((i, j))
+                        current.configure(bg = "blue", font = "ComicSans 9", state = DISABLED)
+                        self.shipCount -= 1
 
-            if (i, j) not in self.ships:
-                if self.shipCount > 0:
-                    self.ships.append((i, j))
-                    current.configure(bg = "blue", state = DISABLED)
-                    self.shipCount -= 1
+                else:
+                    current.configure(bg = self.color, state = NORMAL)
+                    self.ships.remove((i, j))
+                    self.shipCount += 1
 
             else:
-                current.configure(bg = self.color, state = NORMAL)
-                self.ships.remove((i, j))
-                self.shipCount += 1
-
-        else:
-            if (i,j) not in self.clicked:
-                self.send_msg(f"{self.state},,{i},{j}")
-                if self.state == "enable":
+                if (i,j) not in self.clicked and self.connected == 2:
+                    self.send_msg(f",{i},{j}")
                     self.clicked.append((i,j))
 
     def listen(self, so):
@@ -112,7 +112,6 @@ class GUI(Frame):
         thread.start()
 
     def receive(self, so):
-
         while True:
             buffer = so.recv(1024).decode("utf-8")
 
@@ -125,72 +124,70 @@ class GUI(Frame):
                     self.turnLabel.pack(side = LEFT)
 
             elif "," in buffer:
-                state, cond, i, j = buffer.split(",")
+                cond, i, j = buffer.split(",")
                 button = self.grid[int(i)][int(j)]
 
-                if state == "enable":
-                    if cond == "":
-                        if (int(i), int(j)) in self.ships:
-                            button["state"] = NORMAL
-                            button["bg"] = "red"
-                            button["font"] = "ComicSans 9 bold"
-                            button["text"] = "X"
-                            button["state"] = DISABLED
-                            self.hit += 1
+                if cond == "":
+                    if (int(i), int(j)) in self.ships:
+                        button["state"] = NORMAL
+                        button["bg"] = "red"
+                        button["font"] = "ComicSans 9 bold"
+                        button["state"] = DISABLED
+                        self.hit += 1
 
-                            self.turn.set("Opponent")
-                            self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
-                            self.send_msg(f"enable,hit, {i}, {j}")
+                        self.turn.set("Opponent")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
+                        self.send_msg(f"hit, {i}, {j}")
 
-                            if self.hit == 17:
-                                self.send_msg(f"enable,done,0,0")
-                                showerror("Lost", "Unfortunately You lost :(")
-                                root.destroy()
-
-                        else:
-                            self.turn.set("You")
-                            self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
-                            self.send_msg(f"enable,miss, {i}, {j}")
-                            self.enable()
-                            self.state = "enable"
-
-                    else:
-                        if cond == "hit":
-                            self.turn.set("You")
-                            self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
-
-                            if (i, j) not in self.ships:
-                                color = "green"
-                            else:
-                                color = "yellow"
-
-                            button["state"] = NORMAL
-                            button["bg"] = color
-                            button["state"] = DISABLED
-
-                        elif cond == "miss":
-                            self.turn.set("Opponent")
-                            self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
-
-                            if (i, j) not in self.ships:
-                                color = "black"
-                            else:
-                                color = "red"
-
-                            button["state"] = NORMAL
-                            button["text"] = "X"
-                            button["fg"] = color
-                            button["font"] = "ComicSans 9 bold"
-                            button["state"] = DISABLED
-                            self.disable()
-                            self.state = "disable"
-
-                        elif "done" in cond:
-                            showinfo("Win", "You won. Congratulations :)")
+                        if self.hit == 17:
+                            self.send_msg(f"done,0,0")
+                            showerror("Lost", "Unfortunately You lost :(")
                             root.destroy()
 
+                    else:
+                        self.turn.set("You")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
+                        self.send_msg(f"miss, {i}, {j}")
+                        self.enable()
+                        self.state = "enable"
+
+                else:
+                    if cond == "hit":
+                        self.turn.set("You")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
+
+                        if (int(i), int(j)) not in self.ships:
+                            color = "green"
                         else:
-                            print(buffer)
+                            color = "yellow"
+
+                        button["state"] = NORMAL
+                        button["bg"] = color
+                        button["state"] = DISABLED
+
+                    elif cond == "miss":
+                        self.turn.set("Opponent")
+                        self.turnLabel["text"] = f"Turn: {self.turn.get()}, Hit: {self.hit}"
+
+                        if (i, j) not in self.ships:
+                            color = "black"
+                        else:
+                            color = "yellow"
+
+                        button["state"] = NORMAL
+                        button["text"] = "X"
+                        button["fg"] = color
+                        button["font"] = "ComicSans 9 bold"
+                        button["state"] = DISABLED
+                        self.disable()
+                        self.state = "disable"
+
+                    elif "done" in cond:
+                        showinfo("Win", "You won. Congratulations :)")
+                        root.destroy()
+
+                    else:
+                        print(buffer)
 
     def send_msg(self, msg):
         self.soc.send(msg.encode("utf-8"))
