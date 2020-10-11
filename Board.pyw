@@ -1,9 +1,13 @@
-#TO-DO
-#TODO remove hit crosses
+# TO-DO
+# TODO remove hit crosses
 
 from tkinter import *
 from tkinter.messagebox import *
-import socket, threading
+import socket
+import threading
+import os
+from dotenv import find_dotenv, load_dotenv
+
 
 class GUI(Frame):
     def __init__(self, parent):
@@ -22,44 +26,45 @@ class GUI(Frame):
 
     def tcp(self):
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.soc.connect(("192.168.1.46" , 54321))
-        self.connection = "TCP"
+        IP = "192.168.1.49"
+        PORT = 54321
+        self.soc.connect((IP, PORT))
 
         self.listen(self.soc)
 
     def board(self):
-        self.pack(fill = BOTH, expand = True)
+        self.pack(fill=BOTH, expand=True)
 
         b = Button(self)
         self.color = b.cget("background")
         b.destroy()
 
         frame1 = Frame(self)
-        frame1.pack(fill = X)
+        frame1.pack(fill=X)
 
         frame2 = Frame(self)
-        frame2.pack(fill = BOTH, expand = True, padx = 5, side = LEFT, pady = 5)
+        frame2.pack(fill=BOTH, expand=True, padx=5, side=LEFT, pady=5)
 
         self.frame3 = Frame(self)
-        self.frame3.pack(side = LEFT, fill = BOTH, expand = True)
+        self.frame3.pack(side=LEFT, fill=BOTH, expand=True)
 
-        Label(frame1, text = "Battleship", font = "ComicSans 16 bold", fg = "white", bg = "#4267B2").pack(fill = X)
+        Label(frame1, text="Battleship", font="ComicSans 16 bold", fg="white", bg="#4267B2").pack(fill=X)
 
         for i in range(15):
 
             inner = list()
             for j in range(15):
-                button = Button(frame2, height = 1, width = 3)
-                button.grid(row = i, column = j)
-                button.bind("<ButtonRelease-1>", lambda event, position = (i, j): self.pressed(position))
+                button = Button(frame2, height=1, width=3)
+                button.grid(row=i, column=j)
+                button.bind("<ButtonRelease-1>", lambda event, position=(i, j): self.pressed(position))
                 inner.append(button)
 
             self.grid.append(inner)
 
-        self.ready = Button(self.frame3, text = "Ready", command = self.start)
-        self.ready.grid(row = 0, column = 0)
+        self.ready = Button(self.frame3, text="Ready", command=self.start)
+        self.ready.grid(row=0, column=0)
 
-        Grid.rowconfigure(self.frame3, 0, weight = 1)
+        Grid.rowconfigure(self.frame3, 0, weight=1)
 
     def start(self):
         if self.shipCount > 0:
@@ -74,8 +79,8 @@ class GUI(Frame):
                 self.ready.destroy()
                 self.turn.set("Opponent")
                 self.state = "disable"
-                self.turnLabel = Label(self.frame3, text = f"Turn: {self.turn.get()}, Hit: {self.hit}", fg = "OrangeRed3")
-                self.turnLabel.pack(side = LEFT)
+                self.turnLabel = Label(self.frame3, text=f"Turn: {self.turn.get()}, Hit: {self.hit}", fg="OrangeRed3")
+                self.turnLabel.pack(side=LEFT)
                 self.disable()
 
             else:
@@ -94,18 +99,18 @@ class GUI(Frame):
                 if (i, j) not in self.ships:
                     if self.shipCount > 0:
                         self.ships.append((i, j))
-                        current.configure(bg = "blue", font = "ComicSans 9", state = DISABLED)
+                        current.configure(bg="blue", font="ComicSans 9", state=DISABLED)
                         self.shipCount -= 1
 
                 else:
-                    current.configure(bg = self.color, state = NORMAL)
+                    current.configure(bg=self.color, state=NORMAL)
                     self.ships.remove((i, j))
                     self.shipCount += 1
 
             else:
-                if (i,j) not in self.clicked and self.connected == 2:
+                if (i, j) not in self.clicked and self.connected == 2:
                     self.send_msg(f",{i},{j}")
-                    self.clicked.append((i,j))
+                    self.clicked.append((i, j))
 
     def listen(self, so):
         thread = threading.Thread(target=self.receive, args=(so,))
@@ -120,8 +125,8 @@ class GUI(Frame):
 
                 if self.connected == 2:
                     self.ready.destroy()
-                    self.turnLabel = Label(self.frame3, text = f"Turn: {self.turn.get()}, Hit: {self.hit}", fg = "OrangeRed3")
-                    self.turnLabel.pack(side = LEFT)
+                    self.turnLabel = Label(self.frame3, text=f"Turn: {self.turn.get()}, Hit: {self.hit}", fg="OrangeRed3")
+                    self.turnLabel.pack(side=LEFT)
 
             elif "," in buffer:
                 cond, i, j = buffer.split(",")
@@ -197,6 +202,7 @@ class GUI(Frame):
             for j in range(len(self.grid[0])):
                 if (i, j) not in self.ships:
                     self.grid[i][j]["state"] = NORMAL
+
 
 if __name__ == '__main__':
     root = Tk()

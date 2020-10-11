@@ -1,4 +1,8 @@
-import socket, threading
+import socket
+import threading
+import os
+from dotenv import load_dotenv, find_dotenv
+
 
 class TCP:
     def __init__(self):
@@ -9,8 +13,9 @@ class TCP:
 
     def connect(self):
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        IP = socket.gethostbyname("0.0.0.0")
+        IP = "192.168.1.49"
         PORT = 54321
+        print(IP)
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc.bind((IP, PORT))
         self.soc.listen(5)
@@ -21,7 +26,8 @@ class TCP:
     def threat(self):
         while True:
             client = so, (ip, port) = self.soc.accept()
-            if client not in self.clients_list: self.clients_list.append(client)
+            if client not in self.clients_list:
+                self.clients_list.append(client)
             print(f'{ip} connected from {port}')
 
             thread = threading.Thread(target=self.receive, args=(so, ))
