@@ -1,12 +1,11 @@
 # TO-DO
 # TODO remove hit crosses
 
-from tkinter import *
-from tkinter.messagebox import *
 import socket
 import threading
 import os
-from dotenv import find_dotenv, load_dotenv
+from tkinter import *
+from tkinter.messagebox import *
 
 
 class GUI(Frame):
